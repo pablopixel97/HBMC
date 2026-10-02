@@ -1,0 +1,406 @@
+---
+import Imagen from '../components/Imagen.astro';
+import ObraCard from '../components/ObraCard.astro';
+import RegistroObra from '../components/RegistroObra.astro';
+import SectionTitle from '../components/SectionTitle.astro';
+import Servicios from '../components/Servicios.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { obras, type Foto } from '../data/obras';
+import { escalonar } from '../lib/escalonado';
+
+const fotoHero: Foto = {
+  archivo: 'maitencillo/p27.jpg',
+  alt: 'Vivienda ejecutada por HBMC en Maitencillo, al atardecer.',
+};
+
+// Titular con el formato del de composites.archi: dos líneas en gris y dos en el color del texto. Las
+// líneas van por separado para fijar dónde corta cada una y qué color lleva.
+const lineasTitular = [
+  { texto: 'Ejecución de obra', clara: false },
+  { texto: 'en la V Región,', clara: false },
+  { texto: 'de la idea a la', clara: true },
+  { texto: 'obra construida', clara: true },
+];
+// Salida de la referencia: con el hero fijo, las palabras se desvanecen una a una en el último tramo
+// del scroll (del 33 al 100 % del recorrido fijo), con un stagger de 0.2 entre palabras.
+const SALIDA_PALABRAS = [33.33, 100] as const;
+const totalPalabras = lineasTitular.reduce((n, { texto }) => n + texto.split(' ').length, 0);
+let indicePalabra = 0;
+const titular = lineasTitular.map(({ texto, clara }) => ({
+  clara,
+  palabras: texto.split(' ').map((palabra) => {
+    const i = indicePalabra++;
+    return { palabra, i, salida: escalonar(i, totalPalabras, SALIDA_PALABRAS, 0.2) };
+  }),
+}));
+
+const fotosSobre: readonly [Foto, Foto] = [
+  {
+    archivo: 'quirilluca/p07.jpg',
+    alt: 'Equipo de HBMC montando una cercha de madera en la obra de Quirilluca.',
+  },
+  {
+    archivo: 'fundaciones/p09.jpg',
+    alt: 'Hormigonado de fundaciones con camión bomba.',
+  },
+];
+---
+
+<BaseLayout formulario>
+  <section class="hero tema-oscuro">
+    <div class="hero-fijo">
+      <Imagen class="hero-foto" foto={fotoHero} layout="full-width" priority />
+      <div class="hero-contenido contenedor">
+        {/* Un nivel por animación: la palabra baja, su texto sube y después se desvanece. */}
+        <h1 class="hero-titulo">
+          {
+            titular.map(({ clara, palabras }) => (
+              <span class:list={['hero-linea', { clara }]}>
+                {palabras.map(({ palabra, i, salida }) => (
+                  <>
+                    <span class="hero-palabra" style={`--i: ${i}`}>
+                      <span class="hero-sube">
+                        <span class="hero-sale" style={salida}>
+                          {palabra}
+                        </span>
+                      </span>
+                    </span>{' '}
+                  </>
+                ))}
+              </span>
+            ))
+          }
+        </h1>
+      </div>
+    </div>
+  </section>
+
+  <Servicios />
+
+  <section class="tema-oscuro contenedor seccion" aria-labelledby="obras-titulo">
+    <div class="obras-titulo">
+      <SectionTitle class="titulo-ajustado" id="obras-titulo" tenue="Obras" fuerte="Seleccionadas" />
+    </div>
+    <ul class="lista-obras" role="list">
+      {
+        obras.map((obra) => (
+          <li>
+            <ObraCard obra={obra} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <RegistroObra />
+
+  <section class="contenedor seccion sobre" aria-labelledby="sobre-titulo">
+    <SectionTitle id="sobre-titulo" tenue="Sobre" fuerte="HBMC" />
+    <p class="bajada derecha">Un vínculo entre la idea y su materialización.</p>
+    <div class="sobre-cuerpo">
+      <div class="sobre-columna">
+        <p class="texto-columna">
+          Ejecutamos obra para constructoras, oficinas de ingeniería y mandantes técnicos.
+          Coordinamos especialidades, maquinaria y mano de obra calificada para transformar un
+          proyecto en una obra construida, coherente y técnicamente resuelta.
+        </p>
+        <Imagen class="sobre-foto" foto={fotosSobre[0]} />
+      </div>
+      <Imagen class="sobre-foto" foto={fotosSobre[1]} />
+    </div>
+    {/*
+      TODO: las 4 cifras (años, obras, m², sistemas), pendientes del cliente. En la referencia
+      cuentan desde 0 hasta su valor en 2 s (ease-out) la primera vez que entran a la pantalla.
+    */}
+  </section>
+
+  {/* TODO: /Trabajamos Con (testimonios y logos), pendiente de contenido del cliente. */}
+</BaseLayout>
+
+<style>
+  /* Las medidas del titular salen de composites.archi, en rem con la raíz en 1.05vw desde 768px: el
+     titular escala con el ancho de la pantalla. --u hace de ese rem. */
+  .hero {
+    --u: 15px;
+
+    position: relative;
+  }
+
+  @media (min-width: 810px) {
+    .hero {
+      --u: 1.05vw;
+    }
+  }
+
+  .hero-fijo {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: flex-end;
+    min-height: 100svh;
+    overflow: hidden;
+  }
+
+  .hero-foto {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Oscurece la parte baja para que el titular se lea sobre la foto. */
+  .hero-fijo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-grafito) 80%, transparent),
+      color-mix(in srgb, var(--color-grafito) 50%, transparent) 50%,
+      transparent 80%
+    );
+  }
+
+  .hero-contenido {
+    position: relative;
+    width: 100%;
+    margin-block-end: calc(9.375 * var(--u));
+  }
+
+  /* La referencia usa un interlineado de 0.78, pero no tiene tildes. En Jost una mayúscula con tilde
+     sube hasta 0.98em sobre la línea base, así que bajo 1 la tilde choca con la línea de arriba. */
+  .hero-titulo {
+    color: var(--color-tenue);
+    font-size: calc(4.75 * var(--u));
+    font-weight: 600;
+    line-height: 1.04;
+    text-transform: uppercase;
+    text-wrap: wrap;
+  }
+
+  .hero-linea {
+    display: block;
+  }
+
+  /* Primera línea entrada, como en la referencia. */
+  .hero-linea:first-child {
+    text-indent: 8.8889vw;
+  }
+
+  .hero-linea.clara {
+    color: var(--color-texto);
+  }
+
+  /* Cada palabra recorta su texto para poder subir desde abajo. El padding, compensado con margen
+     negativo, deja lugar a las tildes de las mayúsculas. */
+  .hero-palabra {
+    display: inline-block;
+    margin-block: -0.25em;
+    overflow: clip;
+    text-indent: 0;
+  }
+
+  .hero-sube {
+    display: inline-block;
+    padding-block: 0.25em;
+  }
+
+  /* Entrada del titular de la referencia, cada vez que se carga el inicio (si hay intro, cuando
+     sale): las palabras suben una tras otra, las grises pasan del acento a su color y el bloque se
+     asienta. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-intro=''])) .hero-sube {
+      animation: hero-sube 1s cubic-bezier(0.215, 0.61, 0.355, 1) calc(0.3s + var(--i) * 0.07s) both;
+    }
+
+    :global(html:not([data-intro=''])) .hero-palabra {
+      animation: hero-baja 1s cubic-bezier(0.215, 0.61, 0.355, 1) calc(0.3s + var(--i) * 0.07s) both;
+    }
+
+    :global(html:not([data-intro=''])) .hero-linea:not(.clara) .hero-palabra {
+      animation:
+        hero-baja 1s cubic-bezier(0.215, 0.61, 0.355, 1) calc(0.3s + var(--i) * 0.07s) both,
+        hero-color 0.2s ease-out calc(0.8s + var(--i) * 0.05s) both;
+    }
+
+    :global(html:not([data-intro=''])) .hero-titulo {
+      animation: hero-bloque 1.6s cubic-bezier(0.215, 0.61, 0.355, 1) 0.3s both;
+    }
+  }
+
+  /* Salida de la referencia, ligada al scroll: el hero mide 250vh y queda fijo durante 150vh, y las
+     palabras se desvanecen una a una (33–100 % de ese tramo). Al volver a subir, reaparecen. En
+     móvil queda fijo solo 60vh, para no hacer recorrer 2.5 pantallas antes de los servicios. Solo
+     longhands: con el shorthand `animation` el minificador mete el timeline dentro y Chrome lo
+     descarta. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .hero {
+        height: 250vh;
+        view-timeline-name: --hero;
+      }
+
+      @media (max-width: 809px) {
+        .hero {
+          height: 160vh;
+        }
+      }
+
+      .hero-fijo {
+        position: sticky;
+        inset-block-start: 0;
+        height: 100svh;
+      }
+
+      .hero-sale {
+        animation-name: hero-sale;
+        animation-timeline: --hero;
+        animation-range: contain var(--a) contain var(--b);
+        animation-fill-mode: both;
+        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+    }
+  }
+
+  @keyframes hero-sube {
+    from {
+      translate: 0 100%;
+    }
+  }
+
+  @keyframes hero-baja {
+    from {
+      translate: 0 -80%;
+      scale: 1.1;
+    }
+  }
+
+  @keyframes hero-color {
+    from {
+      color: var(--color-acento);
+    }
+  }
+
+  @keyframes hero-bloque {
+    from {
+      translate: 0 10%;
+    }
+  }
+
+  @keyframes hero-sale {
+    to {
+      opacity: 0;
+    }
+  }
+
+  .sobre {
+    display: grid;
+    gap: 3rem;
+  }
+
+  .derecha {
+    justify-self: end;
+    max-width: 36rem;
+    text-align: end;
+  }
+
+  .texto-columna {
+    max-width: 42rem;
+  }
+
+  .sobre-cuerpo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 3rem var(--margen);
+  }
+
+  .sobre-columna {
+    display: grid;
+    gap: 4rem;
+  }
+
+  .sobre-foto {
+    width: 100%;
+    height: auto;
+  }
+
+  /* El título queda fijo al centro de la pantalla y las tarjetas pasan por encima. */
+  .obras-titulo {
+    position: sticky;
+    inset-block-start: 0;
+    display: grid;
+    align-items: center;
+    height: 100svh;
+    container-type: inline-size;
+  }
+
+  /* Ocupa todo el ancho, como en la referencia. "Obras Seleccionadas" mide 8.5em en Jost 500;
+     recalcular si cambia la fuente o el texto. */
+  .obras-titulo .titulo-ajustado {
+    font-size: calc(100cqi / 8.5);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .lista-obras {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: var(--espacio-seccion);
+    max-width: 62.5rem;
+    margin: var(--espacio-seccion) auto 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* La tarjeta entera tapa el título, no solo la foto: sin fondo, el nombre y el sistema de la obra
+     pasaban encima de las letras del título y no se leían. */
+  .lista-obras > li {
+    background-color: var(--color-fondo);
+  }
+
+  /* Las tarjetas crecen de 0.7 a 1 mientras entran a la pantalla, ligadas al scroll. Como en la
+     referencia, no en móvil. Van solo longhands: con el shorthand `animation`, el minificador mete
+     view() dentro y Chrome descarta la declaración entera. */
+  @media (min-width: 810px) and (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .lista-obras > li {
+        animation-name: obra-crece;
+        animation-fill-mode: both;
+        animation-timing-function: linear;
+        animation-timeline: view();
+        animation-range: entry;
+      }
+    }
+  }
+
+  @keyframes obra-crece {
+    from {
+      scale: 0.7;
+    }
+  }
+
+  @media (max-width: 809px) {
+    /* Cada línea del titular entra entera, sin palabras sueltas: la más larga ("Ejecución de obra"
+       más la sangría) mide ~11em en Jost 600. Recalcular si cambia la fuente o el texto. */
+    .hero-contenido {
+      container-type: inline-size;
+    }
+
+    .hero-titulo {
+      font-size: calc(100cqi / 11.3);
+    }
+
+    .hero-linea:first-child {
+      text-indent: 1em;
+    }
+
+    .sobre-cuerpo {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

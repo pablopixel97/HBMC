@@ -1,0 +1,56 @@
+---
+import ObraCard from '../../components/ObraCard.astro';
+import PageHero from '../../components/PageHero.astro';
+import SectionTitle from '../../components/SectionTitle.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { obras, tiposDeObra, type TipoObra } from '../../data/obras';
+
+const ordenTipos: readonly TipoObra[] = ['vivienda', 'obra-gruesa'];
+const grupos = ordenTipos.map((tipo) => ({
+  tipo,
+  ...tiposDeObra[tipo],
+  obras: obras.filter((obra) => obra.tipo === tipo),
+}));
+---
+
+<BaseLayout titulo="Obras" formulario>
+  <PageHero
+    titulo="Obras"
+    foto={{
+      archivo: 'quirilluca/p06.jpg',
+      alt: 'Montaje de muros de paneles SIP en la obra de Quirilluca.',
+    }}
+  />
+
+  {
+    grupos.map(({ tipo, tenue, fuerte, obras: obrasDelGrupo }) => (
+      <section class="contenedor seccion" aria-labelledby={`grupo-${tipo}`}>
+        <SectionTitle id={`grupo-${tipo}`} tenue={tenue} fuerte={fuerte} />
+        <ul class="grilla" role="list">
+          {obrasDelGrupo.map((obra) => (
+            <li>
+              <ObraCard obra={obra} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</BaseLayout>
+
+<style>
+  .grilla {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4rem var(--margen);
+    margin-block-start: 3rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (max-width: 809px) {
+    .grilla {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

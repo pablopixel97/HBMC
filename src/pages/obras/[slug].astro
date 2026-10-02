@@ -1,0 +1,301 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import Imagen from '../../components/Imagen.astro';
+import ObraCard from '../../components/ObraCard.astro';
+import PageHero from '../../components/PageHero.astro';
+import SectionTitle from '../../components/SectionTitle.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { etiquetasEstado, obras } from '../../data/obras';
+import { dosDigitos } from '../../lib/formato';
+
+export const getStaticPaths = (() =>
+  obras.map((obra, i) => ({
+    params: { slug: obra.slug },
+    props: { obra, siguiente: obras[(i + 1) % obras.length] },
+  }))) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { obra, siguiente } = Astro.props;
+
+interface Detalle {
+  etiqueta: string;
+  valor: string | null;
+}
+
+const detalles: Detalle[] = [
+  { etiqueta: 'Año', valor: obra.anio === null ? null : String(obra.anio) },
+  { etiqueta: 'Estado', valor: obra.estado === null ? null : etiquetasEstado[obra.estado] },
+  { etiqueta: 'Ubicación', valor: obra.ubicacion },
+  { etiqueta: 'Superficie', valor: obra.superficieM2 === null ? null : `${obra.superficieM2} m²` },
+  { etiqueta: 'Cliente', valor: obra.cliente },
+  { etiqueta: 'Sistema', valor: obra.sistema },
+];
+const detallesConDato = detalles.filter((d) => d.valor !== null);
+
+const relacionadas = obras.filter((o) => o.slug !== obra.slug).slice(0, 3);
+---
+
+<BaseLayout titulo={obra.nombre} descripcion={obra.resumen} formulario>
+  <PageHero titulo={obra.nombre} foto={obra.portada} />
+
+  <section
+    class:list={['contenedor', 'seccion', 'detalle', { 'sin-fotos': obra.destacadas.length === 0 }]}
+    aria-labelledby="detalles-titulo"
+  >
+    <div class="info">
+      <SectionTitle id="detalles-titulo" tenue="Detalles" fuerte="de Obra" />
+      <dl class="datos">
+        {
+          detallesConDato.map(({ etiqueta, valor }) => (
+            <div>
+              <dt>{etiqueta}</dt>
+              <dd>{valor}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      <p>{obra.resumen}</p>
+    </div>
+    {
+      obra.destacadas.length > 0 && (
+        <div class="fotos">
+          {obra.destacadas.map((foto) => (
+            <Imagen foto={foto} />
+          ))}
+        </div>
+      )
+    }
+  </section>
+
+  <section class="contenedor seccion" aria-labelledby="fases-titulo">
+    <SectionTitle id="fases-titulo" tenue="Fases" fuerte="de Ejecución" />
+    <ol class="fases" role="list">
+      {
+        obra.fases.map((fase, i) => (
+          <li class="fase">
+            <div class="fase-cabecera">
+              <p class="etiqueta">Fase {dosDigitos(i + 1)}</p>
+              <Imagen class="fase-foto" foto={fase.foto} />
+            </div>
+            <div>
+              <h3>{fase.titulo}</h3>
+              <p>{fase.descripcion}</p>
+              {fase.partidas && (
+                <ul class="partidas" role="list">
+                  {fase.partidas.map((partida) => (
+                    <li>{partida}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  {
+    obra.especificaciones.length > 0 && (
+      <section class="contenedor seccion" aria-labelledby="especificaciones-titulo">
+        <SectionTitle id="especificaciones-titulo" tenue="Especificaciones" fuerte="Técnicas" />
+        <table class="especificaciones">
+          <thead>
+            <tr>
+              <th scope="col">Ítem</th>
+              <th scope="col">Especificación</th>
+            </tr>
+          </thead>
+          <tbody>
+            {obra.especificaciones.map(({ item, valor }) => (
+              <tr>
+                <th scope="row">{item}</th>
+                <td>{valor}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+    )
+  }
+
+  <nav class="contenedor siguiente" aria-label="Siguiente obra">
+    <a class="bajada" href={`/obras/${siguiente.slug}`}>{siguiente.nombre} <span aria-hidden="true">›</span></a>
+  </nav>
+
+  <section class="contenedor seccion" aria-labelledby="relacionadas-titulo">
+    <h2 id="relacionadas-titulo" class="etiqueta">Obras relacionadas</h2>
+    <ul class="relacionadas" role="list">
+      {
+        relacionadas.map((o) => (
+          <li>
+            <ObraCard obra={o} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  .detalle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem var(--margen);
+  }
+
+  .info {
+    display: grid;
+    align-content: start;
+    gap: 3rem;
+  }
+
+  .datos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem var(--margen);
+  }
+
+  dt {
+    color: var(--color-secundario);
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  .detalle.sin-fotos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* En escritorio los datos quedan fijos mientras la columna de fotos avanza, como en la referencia
+     (a 100 px del borde, bajo el nav). */
+  @media (min-width: 1200px) {
+    .detalle:not(.sin-fotos) .info {
+      position: sticky;
+      inset-block-start: 6.25rem;
+      align-self: start;
+    }
+  }
+
+  .sin-fotos .info {
+    max-width: 50rem;
+  }
+
+  .fotos {
+    display: grid;
+    gap: var(--margen);
+  }
+
+  .fotos :global(img) {
+    width: 100%;
+    height: auto;
+  }
+
+  .fase-cabecera {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+  }
+
+  .fase-foto {
+    width: 100%;
+    max-width: 24rem;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  .fases {
+    display: grid;
+    margin-block-start: 3rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fase {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 1rem var(--margen);
+    padding-block: 2rem;
+    border-block-start: 1px solid color-mix(in srgb, var(--color-texto) 20%, transparent);
+  }
+
+  .fase h3 {
+    margin-block-end: 1rem;
+    font-size: var(--fs-texto-l);
+  }
+
+  .partidas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block-start: 1.25rem;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-etiqueta);
+  }
+
+  .partidas li {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--color-texto) 25%, transparent);
+    border-radius: 999px;
+  }
+
+  .especificaciones {
+    width: 100%;
+    margin-block-start: 3rem;
+    border-collapse: collapse;
+    text-align: start;
+  }
+
+  .especificaciones th,
+  .especificaciones td {
+    padding-block: 0.75rem;
+    border-block-end: 1px solid color-mix(in srgb, var(--color-texto) 20%, transparent);
+    font-weight: var(--fw-texto);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .especificaciones thead th {
+    font-weight: var(--fw-etiqueta);
+  }
+
+  .especificaciones tbody th {
+    width: 40%;
+    padding-inline-end: var(--margen);
+    color: var(--color-secundario);
+  }
+
+  .siguiente {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .relacionadas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3rem var(--margen);
+    margin-block-start: 2rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (max-width: 1199px) {
+    .detalle {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 809px) {
+    .datos {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fase,
+    .relacionadas {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

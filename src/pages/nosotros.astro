@@ -1,0 +1,96 @@
+---
+import PageHero from '../components/PageHero.astro';
+import SectionTitle from '../components/SectionTitle.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const sigla = [
+  { letra: 'H', significado: 'Hermansen' },
+  { letra: 'B', significado: 'Bermúdez' },
+  { letra: 'C', significado: 'Construcción' },
+  { letra: 'M', significado: 'Maquinaria y mano de obra' },
+] as const;
+---
+
+<BaseLayout titulo="Nosotros" formulario>
+  <PageHero
+    titulo="Construir para habitar."
+    foto={{
+      archivo: 'sitio/equipo.jpg',
+      alt: 'Tres profesionales con casco de seguridad en una obra gruesa con losa de hormigón a la vista.',
+    }}
+    encuadre="center 25%"
+    nota="Foto de referencia"
+  />
+
+  <section class="contenedor seccion mision" aria-labelledby="mision-titulo">
+    <SectionTitle id="mision-titulo" tenue="Nuestra" fuerte="Misión" />
+    <div class="texto">
+      <p class="bajada">
+        Entendemos la construcción como la articulación entre arquitectura, ingeniería, diseño, mano
+        de obra y maquinaria.
+      </p>
+      <p>
+        HBMC es un vínculo estratégico entre mandante, propietario y equipo ejecutor. Participamos en
+        las distintas etapas del proyecto con una mirada integral, interpretando las necesidades
+        técnicas y traduciéndolas en decisiones constructivas, económicas y de ejecución. Nuestra
+        especialización nace en la vivienda costera del litoral central, con una metodología que se
+        lleva a distintas escalas y tipos de obra.
+      </p>
+    </div>
+  </section>
+
+  <section class="contenedor seccion" aria-labelledby="sigla-titulo">
+    <SectionTitle id="sigla-titulo" tenue="Qué es" fuerte="HBMC" />
+    <dl class="sigla">
+      {
+        sigla.map(({ letra, significado }) => (
+          <div>
+            <dt>{letra}</dt>
+            <dd>{significado}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  {/* TODO: /Nuestro Equipo, /Sistemas & Normativa y /Trabaja con Nosotros (docs/estructura-sitio.md); contenido pendiente del cliente. Las tarjetas de equipo llevan el hover de la referencia (docs/referencia-archimagi.md, Interacciones). */}
+</BaseLayout>
+
+<style>
+  .mision {
+    display: grid;
+    gap: 3rem;
+  }
+
+  .texto {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 48rem;
+    justify-self: end;
+  }
+
+  .sigla {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem var(--margen);
+    margin-block-start: 3rem;
+  }
+
+  dt {
+    font-family: var(--font-titulos);
+    font-size: var(--fs-titulo-seccion);
+    font-weight: var(--fw-titulo);
+    line-height: 1;
+  }
+
+  dd {
+    margin: 0.75rem 0 0;
+    font-size: var(--fs-pie);
+  }
+
+  @media (max-width: 809px) {
+    .sigla {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

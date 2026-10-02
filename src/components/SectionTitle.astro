@@ -1,0 +1,26 @@
+---
+// Patrón de títulos de Archimagi, sin la barra "/": la primera palabra en gris y el resto en el color del texto.
+interface Props {
+  tenue: string;
+  fuerte: string;
+  nivel?: 'h1' | 'h2';
+  id?: string;
+  class?: string;
+}
+
+const { tenue, fuerte, nivel: Etiqueta = 'h2', class: clase, ...atributos } = Astro.props;
+---
+
+<Etiqueta class:list={['titulo-seccion', clase]} {...atributos}><span class="tenue">{tenue}</span> {fuerte}</Etiqueta>
+
+<style>
+  .titulo-seccion {
+    font-size: var(--fs-titulo-seccion);
+    letter-spacing: var(--ls-titulo);
+    line-height: 1;
+  }
+
+  .tenue {
+    color: var(--color-tenue);
+  }
+</style>

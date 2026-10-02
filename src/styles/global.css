@@ -1,0 +1,142 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  font-family: var(--font-texto);
+  font-size: var(--fs-texto);
+  font-weight: var(--fw-texto);
+  letter-spacing: var(--ls-texto);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-titulos);
+  font-weight: var(--fw-titulo);
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+img,
+picture,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Temas de sección. El sitio alterna fondos claros y oscuros como la referencia. */
+
+:root,
+.tema-claro {
+  --color-fondo: var(--color-blanco);
+  --color-texto: var(--color-grafito);
+  --color-tenue: var(--color-gris-tenue);
+  --color-secundario: var(--color-gris-secundario);
+}
+
+.tema-crema {
+  --color-fondo: var(--color-crema);
+  --color-texto: var(--color-grafito);
+  --color-tenue: var(--color-gris-tenue);
+  --color-secundario: var(--color-gris-secundario);
+}
+
+.tema-oscuro {
+  --color-fondo: var(--color-grafito);
+  --color-texto: var(--color-crema);
+  --color-tenue: var(--color-gris-sobre-oscuro);
+  --color-secundario: var(--color-gris-sobre-oscuro);
+}
+
+body,
+.tema-claro,
+.tema-crema,
+.tema-oscuro {
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+}
+
+/* Utilidades de maquetación */
+
+.contenedor {
+  padding-inline: var(--margen);
+}
+
+.seccion {
+  padding-block: var(--espacio-seccion);
+}
+
+.etiqueta {
+  font-size: var(--fs-etiqueta);
+  font-weight: var(--fw-etiqueta);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.bajada {
+  font-family: var(--font-titulos);
+  font-size: var(--fs-bajada);
+  font-weight: var(--fw-titulo);
+  letter-spacing: var(--ls-bajada);
+  line-height: 1.2;
+}
+
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

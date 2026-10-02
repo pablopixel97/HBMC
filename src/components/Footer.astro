@@ -1,0 +1,154 @@
+---
+// Footer recreado de composites.archi con sus colores y medidas tal cual. A la izquierda van el menú y
+// el copyright; a la derecha, en vez de los enlaces secundarios de la referencia, funciones de
+// navegación: página anterior y siguiente (en el orden del menú, en círculo) y volver arriba.
+import { navegacion, site } from '../data/site';
+
+const anio = new Date().getFullYear();
+const paginas = [{ etiqueta: 'Inicio', href: '/' }, ...navegacion];
+
+// Página actual: la del menú cuya ruta contiene a la actual (las obras cuentan como "Obras").
+const ruta = Astro.url.pathname;
+const actual = Math.max(
+  0,
+  paginas.findIndex(({ href }) => (href === '/' ? ruta === '/' : ruta.startsWith(href))),
+);
+const anterior = paginas[(actual - 1 + paginas.length) % paginas.length];
+const siguiente = paginas[(actual + 1) % paginas.length];
+---
+
+<footer class="footer">
+  <div class="contenido">
+    <nav class="izquierda" aria-label="Menú del pie">
+      <ul class="menu" role="list">
+        {
+          paginas.map(({ etiqueta, href }) => (
+            <li>
+              <a href={href}>{etiqueta}</a>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="copyright">©{site.nombre} {anio}. Todos los derechos reservados.</p>
+    </nav>
+    <nav class="derecha" aria-label="Recorrido del sitio">
+      <a href={anterior.href} aria-label={`Página anterior: ${anterior.etiqueta}`}>
+        <span aria-hidden="true">‹ </span>{anterior.etiqueta}
+      </a>
+      <a href={siguiente.href} aria-label={`Página siguiente: ${siguiente.etiqueta}`}>
+        {siguiente.etiqueta}<span aria-hidden="true"> ›</span>
+      </a>
+      <a href="#top">Volver arriba <span aria-hidden="true">↑</span></a>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  /* Las medidas de la referencia están en rem, con la raíz en 15px y en 1.05vw desde 768px: el footer
+     crece con el ancho de la pantalla. --u hace de ese rem. Bajo 1428px se queda en 15px, para que
+     el texto no baje de 10px. */
+  .footer {
+    --u: 15px;
+
+    margin-block-start: -1px;
+    /* En la referencia el menú empieza pegado al borde porque la sección de arriba es del mismo negro;
+       aquí lo de arriba tiene otro color, así que se reproduce el espacio que se ve en pantalla. */
+    padding-block: calc(1.75 * var(--u)) calc(2 * var(--u));
+    background-color: var(--color-footer-fondo);
+    color: var(--color-footer-texto);
+    font-family: var(--font-texto);
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 700;
+    letter-spacing: calc(0.009375 * var(--u));
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  @media (min-width: 810px) {
+    .footer {
+      --u: max(15px, 1.05vw);
+    }
+  }
+
+  @media (min-width: 3000px) {
+    .footer {
+      --u: 0.8vw;
+    }
+  }
+
+  .contenido {
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .izquierda {
+    width: 44.4444vw;
+    padding-inline-start: 2.2222vw;
+  }
+
+  .menu {
+    padding: 0;
+    list-style: none;
+  }
+
+  .menu li {
+    height: calc(0.9375 * var(--u));
+  }
+
+  .copyright {
+    margin-block-start: calc(3.125 * var(--u));
+    opacity: 0.5;
+  }
+
+  .derecha {
+    display: flex;
+    width: 53.3333vw;
+  }
+
+  .derecha a {
+    margin-inline-end: calc(1.875 * var(--u));
+  }
+
+  a {
+    opacity: 0.5;
+  }
+
+  /* La referencia pasa al naranja; aquí se usa el acento de la marca. */
+  a:is(:hover, :focus-visible) {
+    color: var(--color-acento);
+    opacity: 1;
+  }
+
+  @media (max-width: 809px) {
+    .contenido {
+      flex-direction: column;
+    }
+
+    .izquierda {
+      width: 100%;
+      padding-inline-start: calc(1.25 * var(--u));
+    }
+
+    .menu li {
+      height: auto;
+    }
+
+    .menu a {
+      display: block;
+      padding-block: calc(0.25 * var(--u));
+      font-size: calc(0.875 * var(--u));
+    }
+
+    .copyright,
+    .derecha a {
+      font-size: calc(0.875 * var(--u));
+    }
+
+    .derecha {
+      justify-content: space-between;
+      width: 100%;
+      margin-block-start: calc(2.5 * var(--u));
+      padding-inline-start: calc(1.25 * var(--u));
+    }
+  }
+</style>

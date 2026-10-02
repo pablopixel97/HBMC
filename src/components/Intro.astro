@@ -1,0 +1,166 @@
+---
+// Animación de entrada al sitio, recreada del preloader de centralohiore.com con el isotipo de HBMC.
+// Cada letra se dibuja en contorno y se rellena con un barrido que gira desde las 12 en sentido
+// antihorario, una tras otra. Sale apenas se llena la última letra, o cuando la página termina de
+// cargar si eso tarda más. Solo se muestra al llegar al sitio (ver el script del
+// <head> en BaseLayout).
+import { cajaIsotipo, letrasIsotipo } from '../data/isotipo';
+
+// Margen alrededor del isotipo para que no se corte el contorno, en puntos del PDF.
+const MARGEN = 1;
+
+const { x, y, ancho, alto } = cajaIsotipo;
+const viewBox = [x - MARGEN, y - MARGEN, ancho + 2 * MARGEN, alto + 2 * MARGEN].join(' ');
+
+// El relleno se descubre con un círculo cuyo trazo, tan ancho como su radio, cubre toda la letra:
+// al correr el dash, el sector visible gira como un reloj.
+const redondear = (n: number) => Math.round(n * 1000) / 1000;
+const letras = letrasIsotipo.map((letra) => {
+  const { caja } = letra;
+  const cx = redondear(caja.x + caja.ancho / 2);
+  const cy = redondear(caja.y + caja.alto / 2);
+  return {
+    ...letra,
+    centro: `translate(${cx} ${cy}) scale(-1 1) rotate(-90)`,
+    radio: redondear(Math.hypot(caja.ancho, caja.alto) / 2 + 0.5),
+  };
+});
+---
+
+<div class="intro" aria-hidden="true" data-intro-hbmc>
+  <div class="fondo"></div>
+  <svg class="logo" viewBox={viewBox}>
+    <defs>
+      {
+        letras.map(({ letra, centro, radio }, i) => (
+          <mask id={`intro-barrido-${letra}`}>
+            <circle
+              class="barrido"
+              style={`--i: ${i}`}
+              transform={centro}
+              r={radio / 2}
+              stroke-width={radio}
+              pathLength="1"
+            />
+          </mask>
+        ))
+      }
+    </defs>
+    {
+      letras.map(({ letra, d, transform }, i) => (
+        <g style={`--i: ${i}`}>
+          <path class="contorno" d={d} transform={transform} pathLength="1" />
+          <g mask={`url(#intro-barrido-${letra})`}>
+            <path class="relleno" d={d} transform={transform} />
+          </g>
+        </g>
+      ))
+    }
+  </svg>
+</div>
+
+<script>
+  // La última letra queda llena a los 1.75 s de empezar; se deja una pausa breve para verla completa.
+  const MINIMO_MS = 2000;
+  // El logo se desvanece en 0.3 s y el fondo baja en 0.6 s, desde los 0.15 s.
+  const SALIDA_MS = 750;
+
+  const raiz = document.documentElement;
+  if (raiz.dataset.intro === '' && document.querySelector('[data-intro-hbmc]')) {
+    const salir = () => {
+      raiz.dataset.intro = 'saliendo';
+      window.setTimeout(() => delete raiz.dataset.intro, SALIDA_MS);
+    };
+    const alCargar = () =>
+      window.setTimeout(salir, Math.max(0, MINIMO_MS - performance.now()));
+
+    if (document.readyState === 'complete') alCargar();
+    else window.addEventListener('load', alCargar, { once: true });
+  }
+</script>
+
+<style>
+  .intro {
+    display: none;
+  }
+
+  :global(html[data-intro]) .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    /* Respaldo: si el script no corre, la intro se retira sola. */
+    animation: intro-respaldo 0s 8s forwards;
+  }
+
+  :global(html[data-intro='saliendo']) .intro {
+    pointer-events: none;
+  }
+
+  .fondo {
+    position: absolute;
+    inset: 0;
+    background: var(--color-crema);
+  }
+
+  .logo {
+    position: relative;
+    width: clamp(7.25rem, 11.75vw, 11rem);
+    overflow: visible;
+  }
+
+  /* Salida de la referencia: el logo se desvanece y el fondo baja, dejando ver la página. */
+  :global(html[data-intro='saliendo']) .logo {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+  }
+
+  :global(html[data-intro='saliendo']) .fondo {
+    translate: 0 100%;
+    transition: translate 0.6s 0.15s cubic-bezier(0.645, 0.045, 0.355, 1);
+  }
+
+  /* Con pathLength="1", el dash cubre todo el trazo. El hueco de 2 y el desplazamiento de 1.01 dejan
+     margen para que el redondeo no asome un punto mientras el trazo debe estar oculto. */
+  .contorno,
+  .barrido {
+    fill: none;
+    stroke-dasharray: 1 2;
+    stroke-dashoffset: 1.01;
+    animation-name: intro-dibujo;
+    animation-timing-function: cubic-bezier(0.645, 0.045, 0.355, 1);
+    animation-fill-mode: both;
+  }
+
+  /* Tiempos de la referencia para la primera letra; cada una empieza 0.3 s después de la anterior.
+     Contorno de 0.1 a 0.4 s y relleno de 0.4 a 0.85 s: la última letra queda llena a los 1.75 s. */
+  .contorno {
+    stroke: var(--color-grafito);
+    stroke-width: 0.6;
+    animation-duration: 0.3s;
+    animation-delay: calc(0.1s + var(--i) * 0.3s);
+  }
+
+  .barrido {
+    stroke: #fff;
+    animation-duration: 0.45s;
+    animation-delay: calc(0.4s + var(--i) * 0.3s);
+  }
+
+  .relleno {
+    fill: var(--color-grafito);
+  }
+
+  @keyframes intro-dibujo {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes intro-respaldo {
+    to {
+      visibility: hidden;
+    }
+  }
+</style>

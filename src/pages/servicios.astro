@@ -1,0 +1,278 @@
+---
+import Imagen from '../components/Imagen.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionTitle from '../components/SectionTitle.astro';
+import TextoRodante from '../components/TextoRodante.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { obras } from '../data/obras';
+import { etapas, metodo, servicios } from '../data/servicios';
+import { dosDigitos } from '../lib/formato';
+
+// Cada servicio con las obras donde se aplicó. Si cita una obra que no existe, el build falla.
+const detalle = servicios.map((servicio) => ({
+  ...servicio,
+  aplicado: servicio.obras.map((slug) => {
+    const obra = obras.find((o) => o.slug === slug);
+    if (!obra) {
+      throw new Error(`El servicio "${servicio.nombre}" cita una obra que no existe: ${slug}`);
+    }
+    return obra;
+  }),
+}));
+---
+
+<BaseLayout
+  titulo="Servicios"
+  descripcion="Servicios constructivos de HBMC para constructoras y mandantes técnicos en la V Región: gestión y ejecución de obra, obra gruesa, fundaciones, estructuras en madera y SIP, instalaciones, terminaciones, maquinaria y mano de obra calificada."
+  formulario
+>
+  <PageHero
+    titulo="Ejecutamos cada partida, de la fundación a la terminación."
+    foto={{
+      archivo: 'maitencillo/p19.jpg',
+      alt: 'Vivienda en obra sobre pilotes en Maitencillo: tabiquería de madera, muros de OSB y estructura de techumbre a un agua.',
+    }}
+  />
+
+  <section class="contenedor seccion presentacion" aria-labelledby="servicios-titulo">
+    <SectionTitle id="servicios-titulo" tenue="Servicios" fuerte="Constructivos" />
+    <p class="bajada derecha">
+      Contrátanos por partida o para la ejecución completa de la obra, con maquinaria propia y mano de
+      obra calificada.
+    </p>
+    <nav class="indice" aria-label="Servicios">
+      <ol role="list">
+        {
+          detalle.map(({ slug, nombre }) => (
+            <li>
+              <a href={`#${slug}`}>
+                <TextoRodante texto={nombre} />
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+  </section>
+
+  <div class="contenedor detalle">
+    {
+      detalle.map(({ slug, nombre, resumen, alcance, aplicado, foto, obra }) => (
+        <article class="servicio" id={slug} aria-labelledby={`${slug}-titulo`}>
+          <div class="cabecera">
+            <h2 class="nombre" id={`${slug}-titulo`}>
+              {nombre}
+            </h2>
+          </div>
+          <div class="texto">
+            <p class="resumen">{resumen}</p>
+            <h3 class="etiqueta">Alcance</h3>
+            <ul class="alcance" role="list">
+              {alcance.map((partida) => (
+                <li>{partida}</li>
+              ))}
+            </ul>
+            <p class="aplicado">
+              <span class="etiqueta">Aplicado en</span>
+              <span>
+                {aplicado.map((o, k) => (
+                  <>
+                    {k > 0 && ' · '}
+                    <a href={`/obras/${o.slug}`}>{o.nombre}</a>
+                  </>
+                ))}
+              </span>
+            </p>
+          </div>
+          <figure class="foto">
+            <Imagen foto={foto} sizes="(min-width: 1200px) 25vw, (min-width: 810px) 40vw, 100vw" />
+            <figcaption class="etiqueta">Obra {obra}</figcaption>
+          </figure>
+        </article>
+      ))
+    }
+  </div>
+
+  <section class="tema-oscuro contenedor seccion metodo" aria-labelledby="metodo-titulo">
+    <SectionTitle id="metodo-titulo" tenue="Nuestro" fuerte="Método" />
+    <p class="bajada derecha">{metodo}</p>
+    <ol class="etapas" role="list">
+      {
+        etapas.map(({ nombre, detalle: texto }, i) => (
+          <li>
+            <p class="etiqueta">Etapa {dosDigitos(i + 1)}</p>
+            <h3>{nombre}</h3>
+            <p>{texto}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+</BaseLayout>
+
+<style>
+  .presentacion {
+    display: grid;
+    gap: 3rem;
+  }
+
+  .derecha {
+    justify-self: end;
+    max-width: 36rem;
+    text-align: end;
+  }
+
+  /* Índice: los servicios numerados, en dos columnas, cada uno con su línea arriba. */
+  .indice ol {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--margen);
+    padding: 0;
+    list-style: none;
+  }
+
+  .indice a {
+    display: block;
+    padding-block: 1rem;
+    border-block-start: 1px solid color-mix(in srgb, var(--color-texto) 20%, transparent);
+    font-size: var(--fs-texto-xl);
+    line-height: 1.2;
+  }
+
+  /* Detalle: nombre, texto con el alcance, y foto. */
+  .detalle {
+    padding-block-end: var(--espacio-seccion);
+  }
+
+  .servicio {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 5fr) minmax(0, 3fr);
+    gap: 2rem var(--margen);
+    padding-block: 3rem;
+    border-block-start: 1px solid color-mix(in srgb, var(--color-texto) 20%, transparent);
+    /* Que el nav fijo no tape el servicio al llegar desde el índice. */
+    scroll-margin-top: 5rem;
+  }
+
+  .nombre {
+    font-size: calc(var(--fs-titulo-seccion) * 0.6);
+    letter-spacing: var(--ls-bajada);
+    line-height: 1.05;
+  }
+
+  .texto {
+    display: grid;
+    align-content: start;
+    gap: 1.25rem;
+  }
+
+  .resumen {
+    font-size: var(--fs-texto-l);
+    line-height: 1.35;
+  }
+
+  .texto h3 {
+    margin-block-start: 0.5rem;
+  }
+
+  .alcance {
+    padding: 0;
+    list-style: none;
+  }
+
+  .alcance li {
+    padding-block: 0.625rem;
+    border-block-start: 1px solid color-mix(in srgb, var(--color-texto) 12%, transparent);
+  }
+
+  .aplicado {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1rem;
+  }
+
+  .aplicado .etiqueta {
+    color: var(--color-secundario);
+  }
+
+  .aplicado a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  .foto {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    margin: 0;
+  }
+
+  .foto :global(img) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  .foto figcaption {
+    color: var(--color-secundario);
+  }
+
+  /* Método: las cinco etapas en fila. */
+  .metodo {
+    display: grid;
+    gap: 3rem;
+  }
+
+  .etapas {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2rem var(--margen);
+    padding: 0;
+    list-style: none;
+  }
+
+  .etapas li {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid color-mix(in srgb, var(--color-texto) 25%, transparent);
+  }
+
+  .etapas .etiqueta {
+    color: var(--color-secundario);
+  }
+
+  .etapas h3 {
+    font-size: var(--fs-texto-l);
+  }
+
+  @media (max-width: 1199px) {
+    .servicio {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
+
+    .cabecera {
+      grid-column: 1 / -1;
+    }
+
+    .etapas {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 809px) {
+    .indice ol,
+    .servicio,
+    .etapas {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .foto {
+      max-width: 24rem;
+    }
+  }
+</style>

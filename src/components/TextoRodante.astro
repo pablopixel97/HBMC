@@ -1,0 +1,42 @@
+---
+// Texto que rueda al pasar el mouse por el enlace o botón que lo contiene: sale hacia arriba y entra
+// una copia desde abajo (botones y tarjetas de Archimagi). La copia no se lee en voz alta.
+// En vez de texto puede rodar otro contenido, como el isotipo del nav: se pasa como hijo.
+interface Props {
+  texto?: string;
+  /** Texto que entra al pasar el mouse; por defecto, el mismo. */
+  alterno?: string;
+}
+
+const { texto = '', alterno = texto } = Astro.props;
+const contenido = Astro.slots.has('default') ? await Astro.slots.render('default') : undefined;
+---
+
+<span class="rodante">
+  <span class="cara">{contenido ? <Fragment set:html={contenido} /> : texto}</span>
+  <span class="cara copia" aria-hidden="true">{contenido ? <Fragment set:html={contenido} /> : alterno}</span>
+</span>
+
+<style>
+  .rodante {
+    display: inline-grid;
+    overflow: clip;
+  }
+
+  .cara {
+    grid-area: 1 / 1;
+    transition: translate 0.4s var(--curva-resorte);
+  }
+
+  .copia {
+    translate: 0 100%;
+  }
+
+  :global(:is(a, button):is(:hover, :focus-visible)) .cara {
+    translate: 0 -100%;
+  }
+
+  :global(:is(a, button):is(:hover, :focus-visible)) .copia {
+    translate: 0 0;
+  }
+</style>

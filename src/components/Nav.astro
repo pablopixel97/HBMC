@@ -1,0 +1,168 @@
+---
+import { navegacion, site } from '../data/site';
+import Isotipo from './Isotipo.astro';
+import TextoRodante from './TextoRodante.astro';
+
+// En la página del enlace, aria-current="page"; en sus subpáginas (una obra dentro de /obras),
+// "true", que marca la sección sin decir que es esa misma página.
+const ruta = Astro.url.pathname.replace(/\/$/, '') || '/';
+const esActual = (href: string) => (ruta === href ? 'page' : ruta.startsWith(`${href}/`) ? 'true' : undefined);
+---
+
+{/* TODO: en el panel del menú, el teléfono y el email (docs/estructura-sitio.md, Navegación). */}
+
+<header class="nav">
+  <a class="pill etiqueta" href="/" aria-label={`${site.nombre}, inicio`}>
+    <TextoRodante><Isotipo class="isotipo" /></TextoRodante>
+  </a>
+  <nav aria-label="Principal">
+    <ul class="pill etiqueta enlaces" role="list">
+      {
+        navegacion.map(({ etiqueta, href }) => (
+          <li>
+            <a class="enlace" href={href} aria-current={esActual(href)}>
+              {etiqueta}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <button class="pill etiqueta boton-menu" type="button" popovertarget="menu-movil">
+      <span class="enlace">Menú</span>
+    </button>
+    <div id="menu-movil" class="menu-movil tema-oscuro" popover>
+      <ul role="list">
+        {
+          navegacion.map(({ etiqueta, href }) => (
+            <li>
+              <a class="enlace" href={href} aria-current={esActual(href)}>
+                {etiqueta}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<style>
+  .nav {
+    position: fixed;
+    inset-block-start: var(--nav-margen);
+    inset-inline: var(--margen);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  .nav > * {
+    pointer-events: auto;
+  }
+
+  /* Entrada de Archimagi: el nav baja 150 px mientras aparece, con 0.2 s de retardo. Solo al llegar
+     al sitio (data-llegada, ver BaseLayout) y, si hay intro, cuando esta empieza a salir. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html[data-llegada]:not([data-intro=''])) .nav {
+      animation: nav-entra 1.6s var(--curva-amortiguada) 0.2s both;
+    }
+  }
+
+  @keyframes nav-entra {
+    from {
+      opacity: 0;
+      translate: 0 -150px;
+    }
+  }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border: 0;
+    border-radius: var(--radio);
+    background: var(--color-grafito);
+    color: var(--color-crema);
+  }
+
+  /* El isotipo ocupa la altura de una línea de texto, así el botón mide lo mismo que antes. */
+  .isotipo {
+    display: block;
+    width: auto;
+    height: 1.4em;
+  }
+
+  .enlaces {
+    gap: 1.5rem;
+    list-style: none;
+  }
+
+  /* Al pasar el mouse el texto solo crece, con el resorte de los botones de la referencia. A
+     diferencia del logo, no rueda. */
+  .enlace {
+    display: inline-block;
+    transition: scale 0.5s var(--curva-resorte);
+  }
+
+  .enlace:is(:hover, :focus-visible),
+  .boton-menu:is(:hover, :focus-visible) .enlace {
+    scale: 1.1;
+  }
+
+  /* La página o sección actual va subrayada. */
+  .enlace[aria-current] {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.35em;
+  }
+
+  .boton-menu {
+    display: none;
+    cursor: pointer;
+  }
+
+  .menu-movil {
+    inset: calc(var(--nav-margen) + 3.5rem) var(--margen) auto auto;
+    margin: 0;
+    padding: 1.5rem 2rem;
+    border: 0;
+    border-radius: var(--radio);
+    opacity: 0;
+    transition:
+      opacity 0.4s var(--curva-resorte),
+      overlay 0.4s allow-discrete,
+      display 0.4s allow-discrete;
+  }
+
+  .menu-movil:popover-open {
+    opacity: 1;
+  }
+
+  @starting-style {
+    .menu-movil:popover-open {
+      opacity: 0;
+    }
+  }
+
+  .menu-movil ul {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-texto-xl);
+  }
+
+  @media (max-width: 809px) {
+    .enlaces {
+      display: none;
+    }
+
+    .boton-menu {
+      display: inline-flex;
+    }
+  }
+</style>

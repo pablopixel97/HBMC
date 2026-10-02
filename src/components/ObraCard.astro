@@ -1,0 +1,60 @@
+---
+import type { Obra } from '../data/obras';
+import Imagen from './Imagen.astro';
+import TextoRodante from './TextoRodante.astro';
+
+interface Props {
+  obra: Obra;
+}
+
+const { obra } = Astro.props;
+---
+
+<a class="obra" href={`/obras/${obra.slug}`}>
+  <Imagen class="foto" foto={obra.portada} decorativa />
+  <div class="pie">
+    <h3 class="nombre"><TextoRodante texto={obra.nombre} alterno="Ver obra →" /></h3>
+    <p class="meta">
+      <span>{obra.sistema}</span>
+      {obra.anio !== null && <span>{obra.anio}</span>}
+    </p>
+  </div>
+</a>
+
+<style>
+  .obra {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .foto {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--color-texto) 12%, var(--color-fondo));
+  }
+
+  .pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    font-size: var(--fs-pie);
+    line-height: 1.2;
+  }
+
+  .nombre {
+    font-family: var(--font-texto);
+    font-size: inherit;
+    font-weight: var(--fw-titulo);
+  }
+
+  .meta {
+    display: flex;
+    gap: 1.5rem;
+    color: var(--color-secundario);
+  }
+</style>

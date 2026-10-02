@@ -1,0 +1,16 @@
+---
+// Isotipo de HBMC en SVG, en el color del texto (currentColor). Es decorativo: el nombre accesible lo
+// pone el enlace o el contexto que lo contiene.
+import { cajaIsotipo, letrasIsotipo } from '../data/isotipo';
+
+interface Props {
+  class?: string;
+}
+
+const { ...atributos } = Astro.props;
+const { x, y, ancho, alto } = cajaIsotipo;
+---
+
+<svg {...atributos} viewBox={`${x} ${y} ${ancho} ${alto}`} aria-hidden="true" focusable="false">
+  {letrasIsotipo.map(({ d, transform }) => <path d={d} transform={transform} fill="currentColor" />)}
+</svg>

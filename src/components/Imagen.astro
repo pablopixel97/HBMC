@@ -1,0 +1,33 @@
+---
+import { Image } from 'astro:assets';
+import type { Foto } from '../data/obras';
+import { imagen } from '../lib/fotos';
+
+interface Props {
+  foto: Foto;
+  /** Deja el alt vacío, p. ej. dentro de un enlace cuyo texto ya identifica el destino. */
+  decorativa?: boolean;
+  layout?: 'constrained' | 'full-width';
+  /** Para la foto principal visible al cargar la página (una por página). */
+  priority?: boolean;
+  /** Ancho con que se muestra (atributo sizes), cuando es bastante menor que el de la foto. */
+  sizes?: string;
+  class?: string;
+  quality?: number;
+}
+
+const { foto, decorativa = false, layout = 'constrained', priority = false, quality, ...atributos } = Astro.props;
+---
+
+{/*
+  Calidad: 85 para priority / hero para mantener nitidez fotográfica HD de cámara SLR;
+  60 por defecto para fotos secundarias provenientes de PDFs comprimidos. Permite override con prop quality.
+*/}
+<Image
+  {...atributos}
+  src={imagen(foto.archivo)}
+  alt={decorativa ? '' : foto.alt}
+  layout={layout}
+  priority={priority}
+  quality={quality ?? (priority ? 85 : 60)}
+/>

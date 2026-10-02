@@ -1,0 +1,642 @@
+---
+// Solicitud de cotización, recreada de la sección de contacto de composites.archi.
+// En escritorio, mientras la sección entra a la pantalla, las palabras del título suben una a una,
+// una ola de color las pasa del acento al gris, se dibujan las líneas de los campos, aparecen
+// etiquetas y campos, y por último crece el botón. Todo queda completo cuando la sección llega
+// arriba. El orden y los escalonamientos son los de la referencia (GSAP ScrollTrigger); los tramos
+// van como porcentajes del recorrido `entry`: 0 % cuando el borde superior aparece abajo y 100 %
+// cuando llega arriba. En la referencia la sección medía 300vh y quedaba fija, pero tardaba
+// demasiado en mostrar el formulario.
+import { contacto, enlacesContacto, site } from '../data/site';
+import { servicios } from '../data/servicios';
+import { escalonar } from '../lib/escalonado';
+
+const titulo =
+  'Desde el trazado hasta la recepción, HBMC ejecuta cada partida con control en todas sus fases.';
+const subtitulo = 'Respondemos cada solicitud de cotización.';
+
+// Tramos de cada animación, en % del recorrido `entry` de la sección.
+const TRAMOS = {
+  titulo: [5, 55],
+  bloqueTitulo: [5, 70],
+  subtitulo: [25, 65],
+  bloqueSubtitulo: [25, 80],
+  lineas: [40, 65],
+  campos: [55, 95],
+} as const;
+
+// En la referencia los espacios también son palabras animadas: un stagger de 0.1 entre elementos
+// equivale a 0.2 entre palabras visibles (0.14 en las cajas del subtítulo).
+function partir(texto: string, tramo: readonly [number, number], pasoTexto: number, pasoCaja: number) {
+  const palabras = texto.split(' ');
+  return palabras.map((palabra, k) => ({
+    texto: palabra,
+    destacada: palabra === site.nombre,
+    estiloTexto: escalonar(k, palabras.length, tramo, pasoTexto),
+    estiloCaja: `--i: ${k}; ${escalonar(k, palabras.length, tramo, pasoCaja)}`,
+  }));
+}
+
+const palabrasTitulo = partir(titulo, TRAMOS.titulo, 0.2, 0.2);
+const palabrasSubtitulo = partir(subtitulo, TRAMOS.subtitulo, 0.2, 0.14);
+
+interface Campo {
+  id: string;
+  etiqueta: string;
+  obligatorio: boolean;
+  tipo: 'text' | 'email' | 'tel' | 'select' | 'textarea';
+  placeholder: string;
+  autocomplete?: string;
+}
+
+// Filas de dos campos y filas de uno, en el orden de la referencia.
+const filas: readonly (readonly Campo[])[] = [
+  [
+    { id: 'nombre', etiqueta: 'Nombre', obligatorio: true, tipo: 'text', placeholder: 'Tu nombre', autocomplete: 'given-name' },
+    { id: 'apellido', etiqueta: 'Apellido', obligatorio: true, tipo: 'text', placeholder: 'Tu apellido', autocomplete: 'family-name' },
+  ],
+  [
+    { id: 'email', etiqueta: 'Email', obligatorio: true, tipo: 'email', placeholder: 'tu@empresa.cl', autocomplete: 'email' },
+    { id: 'telefono', etiqueta: 'Teléfono', obligatorio: false, tipo: 'tel', placeholder: '+56 9', autocomplete: 'tel' },
+  ],
+  [
+    { id: 'cargo', etiqueta: 'Cargo', obligatorio: true, tipo: 'text', placeholder: 'Tu cargo', autocomplete: 'organization-title' },
+    { id: 'empresa', etiqueta: 'Empresa', obligatorio: true, tipo: 'text', placeholder: 'Constructora u oficina', autocomplete: 'organization' },
+  ],
+  [{ id: 'partida', etiqueta: 'Partida', obligatorio: true, tipo: 'select', placeholder: 'Elige el servicio' }],
+  [{ id: 'ubicacion', etiqueta: 'Ubicación', obligatorio: true, tipo: 'text', placeholder: 'Comuna o sector de la obra' }],
+  [
+    {
+      id: 'mensaje',
+      etiqueta: 'Mensaje',
+      obligatorio: true,
+      tipo: 'textarea',
+      placeholder: 'Describe la obra, la partida y los plazos',
+    },
+  ],
+];
+const totalCampos = filas.flat().length;
+const opcionesPartida = [...servicios.map((s) => s.nombre), 'Otra'];
+
+let indiceCampo = 0;
+const conEstilos = filas.map((fila) =>
+  fila.map((campo) => {
+    const k = indiceCampo++;
+    return {
+      ...campo,
+      estiloLinea: escalonar(k, totalCampos, TRAMOS.lineas, 0.1),
+      estiloCampo: escalonar(k, totalCampos, TRAMOS.campos, 0.1),
+    };
+  }),
+);
+---
+
+<section class="cotizar tema-oscuro" aria-labelledby="cotizar-titulo" data-cotizar>
+  {/* Destino de los enlaces a #cotizar: en escritorio cae donde el formulario ya está completo. */}
+  <span id="cotizar" class="ancla"></span>
+  <div class="fijo">
+    <div class="contenedor contenido">
+      <div class="izquierda">
+        <p class="antetitulo etiqueta" id="cotizar-etiqueta">Solicitud de cotización</p>
+        <h2 class="titulo bloque-titulo" id="cotizar-titulo">
+          {
+            palabrasTitulo.map(({ texto, destacada, estiloTexto, estiloCaja }) => (
+              <>
+                <span class:list={['palabra', { destacada }]} style={estiloCaja}>
+                  <span style={estiloTexto}>{texto}</span>
+                </span>{' '}
+              </>
+            ))
+          }
+        </h2>
+        <p class="subtitulo bloque-subtitulo">
+          {
+            palabrasSubtitulo.map(({ texto, estiloTexto, estiloCaja }) => (
+              <>
+                <span class="palabra" style={estiloCaja}>
+                  <span style={estiloTexto}>{texto}</span>
+                </span>{' '}
+              </>
+            ))
+          }
+        </p>
+      </div>
+
+      {/*
+        TODO: enviar a un servicio de formularios o a un backend (y publicar una política de
+        privacidad, docs/estructura-sitio.md). Mientras tanto se arma un correo con los datos.
+      */}
+      <form
+        class="formulario"
+        aria-labelledby="cotizar-etiqueta"
+        action={enlacesContacto.email}
+        method="post"
+        enctype="text/plain"
+        data-destino={contacto.email}
+      >
+        {
+          conEstilos.map((fila) => (
+            <div class:list={['fila', { doble: fila.length > 1 }]}>
+              {fila.map((campo) => (
+                <div class="campo">
+                  <span class="linea" style={campo.estiloLinea} />
+                  <label class="etiqueta-campo" for={campo.id} style={campo.estiloCampo}>
+                    {campo.etiqueta}
+                    {campo.obligatorio && <span aria-hidden="true">*</span>}
+                  </label>
+                  {campo.tipo === 'select' ? (
+                    <select class="entrada" id={campo.id} name={campo.id} required={campo.obligatorio} style={campo.estiloCampo}>
+                      <option value="" disabled selected>
+                        {campo.placeholder}
+                      </option>
+                      {opcionesPartida.map((opcion) => (
+                        <option value={opcion}>{opcion}</option>
+                      ))}
+                    </select>
+                  ) : campo.tipo === 'textarea' ? (
+                    <textarea
+                      class="entrada"
+                      id={campo.id}
+                      name={campo.id}
+                      placeholder={campo.placeholder}
+                      required={campo.obligatorio}
+                      style={campo.estiloCampo}
+                    />
+                  ) : (
+                    <input
+                      class="entrada"
+                      type={campo.tipo}
+                      id={campo.id}
+                      name={campo.id}
+                      placeholder={campo.placeholder}
+                      autocomplete={campo.autocomplete}
+                      required={campo.obligatorio}
+                      style={campo.estiloCampo}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          ))
+        }
+        <button class="boton" type="submit">
+          <span class="boton-texto etiqueta">Enviar solicitud</span>
+          <svg viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M1.5 1v6.5h7M6.5 5.5l2 2-2 2" />
+          </svg>
+        </button>
+        <p class="estado" role="status"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Lo que en la referencia se dispara al pasar un punto del scroll (y se revierte al volver): la ola
+  // de color del título (30 %) y del subtítulo (45 %), y el botón (65 %), en % del recorrido `entry`.
+  // El resto va por CSS.
+  const UMBRALES = { 'color-titulo': 30, 'color-subtitulo': 45, boton: 65 } as const;
+  const animado = window.matchMedia('(min-width: 1200px) and (prefers-reduced-motion: no-preference)');
+
+  for (const seccion of document.querySelectorAll<HTMLElement>('[data-cotizar]')) {
+    let cuadro = 0;
+    const actualizar = () => {
+      cuadro = 0;
+      const activo = animado.matches && CSS.supports('animation-timeline: view()');
+      const caja = seccion.getBoundingClientRect();
+      // Recorrido `entry`: del borde superior abajo de la pantalla hasta que llega arriba (o hasta
+      // que la sección entra entera, si es más baja que la pantalla).
+      const avance = ((innerHeight - caja.top) / Math.min(caja.height, innerHeight)) * 100;
+      for (const [clave, umbral] of Object.entries(UMBRALES)) {
+        seccion.toggleAttribute(`data-${clave}`, !activo || avance >= umbral);
+      }
+    };
+    actualizar();
+    window.addEventListener('scroll', () => (cuadro ||= requestAnimationFrame(actualizar)), { passive: true });
+    animado.addEventListener('change', actualizar);
+
+    // Envío provisorio: se abre el correo del visitante con la solicitud redactada.
+    const formulario = seccion.querySelector<HTMLFormElement>('form');
+    const estado = seccion.querySelector<HTMLElement>('.estado');
+    formulario?.addEventListener('submit', (evento) => {
+      evento.preventDefault();
+      const datos = new FormData(formulario);
+      const valor = (campo: string) => String(datos.get(campo) ?? '').trim();
+      const asunto = `Solicitud de cotización: ${valor('partida')} · ${valor('empresa')}`;
+      const cuerpo = [
+        `Nombre: ${valor('nombre')} ${valor('apellido')}`,
+        `Cargo: ${valor('cargo')}`,
+        `Empresa: ${valor('empresa')}`,
+        `Email: ${valor('email')}`,
+        `Teléfono: ${valor('telefono') || '—'}`,
+        `Partida: ${valor('partida')}`,
+        `Ubicación: ${valor('ubicacion')}`,
+        '',
+        valor('mensaje'),
+      ].join('\n');
+      const destino = formulario.dataset.destino ?? '';
+      window.location.href = `mailto:${destino}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+      if (estado) {
+        estado.textContent = `Abrimos tu correo con la solicitud lista para enviar. Si no se abrió, escríbenos a ${destino}.`;
+      }
+    });
+  }
+</script>
+
+<style>
+  .cotizar {
+    position: relative;
+    color-scheme: dark;
+    padding-block: var(--espacio-seccion);
+  }
+
+  .ancla {
+    position: absolute;
+    inset-block-start: 0;
+  }
+
+  .contenido {
+    display: grid;
+    grid-template-columns: minmax(0, 37fr) minmax(0, 56fr);
+    justify-content: space-between;
+    align-items: start;
+    gap: 3rem 7%;
+  }
+
+  /* Dice qué es la sección: el título es un eslogan. */
+  .antetitulo {
+    margin-block-end: 2rem;
+    color: var(--color-secundario);
+  }
+
+  /* Título en mayúsculas con la primera línea entrada; la palabra destacada va en el color de acento.
+     Interlineado sobre 1 para que las tildes de las mayúsculas (hasta 0.98em) no choquen con la línea
+     de arriba. */
+  .titulo {
+    color: var(--color-tenue);
+    font-size: 2.5rem;
+    line-height: 1.04;
+    text-indent: 10%;
+    text-transform: uppercase;
+    text-wrap: wrap;
+  }
+
+  .subtitulo {
+    max-width: 22ch;
+    margin-block-start: 2.5rem;
+    color: var(--color-tenue);
+    font-family: var(--font-titulos);
+    font-size: 1.5rem;
+    font-weight: var(--fw-titulo);
+    line-height: 1;
+  }
+
+  /* Cada palabra recorta su texto para que pueda subir desde abajo; el padding evita cortar tildes
+     y descendentes. */
+  .palabra {
+    display: inline-block;
+    margin-block: -0.375rem;
+    overflow: clip;
+    text-indent: 0;
+  }
+
+  .palabra > span {
+    display: inline-block;
+    padding-block: 0.375rem;
+  }
+
+  .destacada {
+    color: var(--color-acento);
+  }
+
+  .fila.doble {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .campo {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    padding-block-start: 1rem;
+  }
+
+  .linea {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    /* 40 % deja la línea en 3.3:1 sobre grafito, el mínimo para el borde de un campo (WCAG 1.4.11). */
+    background-color: color-mix(in srgb, var(--color-texto) 40%, transparent);
+    transform-origin: left;
+    transition: background-color 0.2s ease-out;
+  }
+
+  /* El campo activo se marca con la línea en el color de acento, como en la referencia. */
+  .campo:focus-within .linea {
+    background-color: var(--color-acento);
+  }
+
+  .etiqueta-campo {
+    display: flex;
+    gap: 0.375rem;
+    flex: none;
+    min-width: 6.5rem;
+    margin-inline-end: 0.75rem;
+    color: var(--color-secundario);
+    font-size: var(--fs-etiqueta);
+    white-space: nowrap;
+  }
+
+  .etiqueta-campo span {
+    color: var(--color-acento);
+  }
+
+  .entrada {
+    flex: 1;
+    min-width: 0;
+    padding: 0 0 2rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-texto);
+    font: inherit;
+    font-size: var(--fs-etiqueta);
+    letter-spacing: inherit;
+  }
+
+  .entrada:focus-visible {
+    outline: none;
+  }
+
+  /* 55 % deja el texto de ejemplo en 4.9:1 sobre grafito, más tenue que lo que se escribe. */
+  .entrada::placeholder {
+    color: color-mix(in srgb, var(--color-texto) 55%, transparent);
+  }
+
+  /* Bajo 16 px, Safari en iPhone y iPad amplía la página al tocar el campo. */
+  @media (pointer: coarse) {
+    .entrada {
+      font-size: 1rem;
+    }
+  }
+
+  select.entrada {
+    appearance: none;
+    padding-inline-end: 1.5rem;
+    background: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6"%3E%3Cpath d="M1 1l4 4 4-4" fill="none" stroke="%23f3f0e8" stroke-width="1"/%3E%3C/svg%3E')
+      no-repeat right 0.25rem top 0.35rem / 0.625rem;
+    cursor: pointer;
+  }
+
+  select.entrada:invalid {
+    color: color-mix(in srgb, var(--color-texto) 55%, transparent);
+  }
+
+  /* La lista desplegable: en Windows el navegador la pinta blanca y las opciones heredaban el texto
+     claro del formulario, así que no se leían. Va en los colores del formulario. */
+  select.entrada option {
+    background-color: var(--color-grafito);
+    color: var(--color-crema);
+  }
+
+  select.entrada option:disabled {
+    color: var(--color-gris-sobre-oscuro);
+  }
+
+  textarea.entrada {
+    height: 6.25rem;
+    resize: vertical;
+  }
+
+  .boton {
+    position: relative;
+    display: block;
+    min-width: 11.25rem;
+    margin-block-start: 1.5rem;
+    padding: 0.5rem 2.5rem 2rem 0.5rem;
+    border: 0;
+    border-radius: 0.125rem;
+    background: var(--color-acento);
+    color: var(--color-grafito);
+    text-align: start;
+    cursor: pointer;
+    transform-origin: left;
+  }
+
+  /* El anillo de foco global toma el color del texto, que aquí es grafito sobre la sección grafito. */
+  .boton:focus-visible {
+    outline-color: var(--color-acento);
+  }
+
+  .boton svg {
+    position: absolute;
+    inset: auto 0.375rem 0.375rem auto;
+    width: 0.625rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1;
+  }
+
+  .estado:not(:empty) {
+    margin-block-start: 1rem;
+    color: var(--color-secundario);
+  }
+
+  @media (max-width: 1199px) {
+    .contenido {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .titulo {
+      font-size: 2.25rem;
+    }
+  }
+
+  @media (max-width: 809px) {
+    .titulo {
+      font-size: 1.75rem;
+    }
+
+    .subtitulo {
+      font-size: 1.125rem;
+    }
+
+    .fila.doble {
+      display: block;
+    }
+  }
+
+  /* Animaciones ligadas al scroll, solo en escritorio. Sin soporte de animation-timeline la sección
+     queda estática. La sección ocupa una pantalla con el contenido centrado: cuando llega arriba, el
+     formulario está completo y entero a la vista. */
+  @media (min-width: 1200px) and (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .cotizar {
+        padding-block: 0;
+        view-timeline-name: --cotizar;
+      }
+
+      .fijo {
+        display: flex;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .contenido {
+        width: 100%;
+        padding-block: 8vh;
+      }
+
+      /* Cada elemento recibe su tramo en --a y --b; easing power1.out de GSAP. Solo longhands: con
+         el shorthand `animation` el minificador mete el timeline dentro y Chrome lo descarta. */
+      .antetitulo,
+      .palabra,
+      .palabra > span,
+      .bloque-titulo,
+      .bloque-subtitulo,
+      .linea,
+      .etiqueta-campo,
+      .entrada {
+        animation-timeline: --cotizar;
+        animation-range: entry var(--a) entry var(--b);
+        animation-fill-mode: both;
+        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+
+      .antetitulo {
+        --a: 0%;
+        --b: 40%;
+
+        animation-name: cotizar-etiqueta;
+      }
+
+      .palabra > span {
+        animation-name: cotizar-sube;
+      }
+
+      .palabra {
+        animation-name: cotizar-baja;
+      }
+
+      .bloque-titulo {
+        --a: 5%;
+        --b: 70%;
+
+        animation-name: cotizar-bloque;
+      }
+
+      .bloque-subtitulo {
+        --a: 25%;
+        --b: 80%;
+
+        animation-name: cotizar-bloque;
+      }
+
+      .linea {
+        animation-name: cotizar-linea;
+      }
+
+      .etiqueta-campo {
+        animation-name: cotizar-etiqueta;
+      }
+
+      .entrada {
+        animation-name: cotizar-entrada;
+      }
+
+      /* Ola de color: las palabras parten en el acento y pasan al gris una tras otra. */
+      .palabra:not(.destacada) {
+        color: var(--color-acento);
+        transition: color 0.2s ease-out calc(var(--i, 0) * 0.05s);
+      }
+
+      [data-color-titulo] .titulo .palabra:not(.destacada),
+      [data-color-subtitulo] .subtitulo .palabra:not(.destacada) {
+        color: var(--color-tenue);
+      }
+
+      /* El botón crece desde la izquierda y después aparecen el texto y la flecha. */
+      .boton {
+        scale: 0 1;
+        transition: scale 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+
+      .boton-texto,
+      .boton svg {
+        opacity: 0;
+        transition:
+          opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s,
+          translate 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s;
+      }
+
+      .boton-texto {
+        display: block;
+        translate: 10px 0;
+      }
+
+      .boton svg {
+        translate: -10px 0;
+      }
+
+      [data-boton] .boton {
+        scale: 1;
+      }
+
+      [data-boton] :is(.boton-texto, .boton svg) {
+        opacity: 1;
+        translate: 0 0;
+      }
+
+      /* Si alguien entra al formulario con el teclado antes de que termine de aparecer, se muestra
+         completo de inmediato. */
+      .formulario:focus-within :is(.linea, .etiqueta-campo, .entrada) {
+        animation: none;
+      }
+
+      .formulario:focus-within :is(.boton, .boton-texto, .boton svg) {
+        opacity: 1;
+        scale: 1;
+        translate: 0 0;
+      }
+    }
+  }
+
+  @keyframes cotizar-sube {
+    from {
+      translate: 0 100%;
+    }
+  }
+
+  @keyframes cotizar-baja {
+    from {
+      translate: 0 -80%;
+      scale: 1.1;
+    }
+  }
+
+  @keyframes cotizar-bloque {
+    from {
+      translate: 0 10%;
+    }
+  }
+
+  @keyframes cotizar-linea {
+    from {
+      scale: 0 1;
+    }
+  }
+
+  @keyframes cotizar-etiqueta {
+    from {
+      opacity: 0;
+      translate: 0 20px;
+    }
+  }
+
+  @keyframes cotizar-entrada {
+    from {
+      opacity: 0;
+      translate: 20px 0;
+    }
+  }
+</style>

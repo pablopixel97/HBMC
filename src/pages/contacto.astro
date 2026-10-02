@@ -1,0 +1,68 @@
+---
+import PageHero from '../components/PageHero.astro';
+import SectionTitle from '../components/SectionTitle.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { contacto, enlacesContacto, site } from '../data/site';
+---
+
+<BaseLayout titulo="Contacto" formulario>
+  <PageHero
+    titulo="¿Tienes una obra en curso? Conversemos."
+    foto={{
+      archivo: 'quirilluca/p10.jpg',
+      alt: 'Estructura de cielo y ventanas altas de la vivienda de Quirilluca durante la obra.',
+    }}
+  />
+
+  <section class="contenedor seccion" aria-labelledby="contacto-titulo">
+    <SectionTitle id="contacto-titulo" tenue="Contacto" fuerte="HBMC" />
+    <div class="columnas">
+      <div class="grupo">
+        <h3 class="etiqueta">Dónde operamos</h3>
+        <p class="bajada">{site.zona}<br />Litoral central</p>
+        {/* TODO: horario de atención, pendiente del cliente. */}
+      </div>
+      <div class="grupo">
+        <h3 class="etiqueta">Cómo hablarnos</h3>
+        <ul class="bajada lista" role="list">
+          <li><a href={enlacesContacto.telefono}>{contacto.telefono}</a></li>
+          <li><a href={enlacesContacto.email}>{contacto.email}</a></li>
+          <li>
+            <a href={enlacesContacto.instagram} target="_blank" rel="noopener">
+              @{contacto.instagram} <span aria-hidden="true">↗</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .columnas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem var(--margen);
+    margin-block-start: 3rem;
+  }
+
+  .grupo {
+    display: grid;
+    align-content: start;
+    gap: 1.25rem;
+  }
+
+  .lista {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0;
+    list-style: none;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 809px) {
+    .columnas {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

@@ -1,0 +1,249 @@
+---
+// "/Especialidades & Servicios": los servicios rotan y cada uno muestra una foto de obra
+// (patrón de la sección "Specializations & Services" de Archimagi). Cada servicio enlaza a su
+// detalle en /servicios.
+import { metodo, servicios } from '../data/servicios';
+import Imagen from './Imagen.astro';
+import SectionTitle from './SectionTitle.astro';
+
+// La flecha va pegada a la última palabra para que nunca baje sola a otra línea.
+const lista = servicios.map((servicio) => {
+  const corte = servicio.nombre.lastIndexOf(' ') + 1;
+  return { ...servicio, inicio: servicio.nombre.slice(0, corte), final: servicio.nombre.slice(corte) };
+});
+---
+
+<section class="contenedor seccion" aria-labelledby="servicios-titulo" data-servicios>
+  <SectionTitle id="servicios-titulo" tenue="Especialidades" fuerte="& Servicios" />
+
+  <div class="cuerpo">
+    <ul class="lista" role="list">
+      {
+        lista.map((servicio, i) => (
+          <li>
+            <a class="servicio" href={`/servicios#${servicio.slug}`} data-activo={i === 0 ? '' : undefined}>
+              {servicio.inicio}
+              {/* Sin espacio entre la palabra y la flecha: la separación la da su margen. */}
+              <span class="final">{servicio.final}<svg class="flecha" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h14.5M10.5 1l4 4-4 4" /></svg></span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="visor">
+      {
+        servicios.map((servicio, i) => (
+          <figure class:list={['figura', { activa: i === 0 }]}>
+            <Imagen class="foto" foto={servicio.foto} />
+            <figcaption class="pie etiqueta">Obra {servicio.obra}</figcaption>
+          </figure>
+        ))
+      }
+    </div>
+
+    <div class="metodo">
+      <p class="etiqueta">Nuestro método</p>
+      <p class="metodo-texto">{metodo}</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  const INTERVALO_MS = 4000;
+  const reducirMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  for (const seccion of document.querySelectorAll<HTMLElement>('[data-servicios]')) {
+    const enlaces = [...seccion.querySelectorAll<HTMLAnchorElement>('.servicio')];
+    const figuras = [...seccion.querySelectorAll<HTMLElement>('.figura')];
+    let activo = 0;
+    let temporizador: number | undefined;
+    let detenidaPorTacto = false;
+
+    const activar = (indice: number) => {
+      activo = indice;
+      enlaces.forEach((enlace, i) => enlace.toggleAttribute('data-activo', i === indice));
+      figuras.forEach((figura, i) => figura.classList.toggle('activa', i === indice));
+    };
+
+    const detener = () => {
+      window.clearInterval(temporizador);
+      temporizador = undefined;
+    };
+
+    const iniciar = () => {
+      if (reducirMovimiento.matches || detenidaPorTacto || temporizador !== undefined) return;
+      temporizador = window.setInterval(() => activar((activo + 1) % enlaces.length), INTERVALO_MS);
+    };
+
+    // Al pasar el mouse o llegar con el teclado se muestra la foto del servicio; el clic lleva a su
+    // detalle en /servicios.
+    enlaces.forEach((enlace, i) => {
+      enlace.addEventListener('mouseenter', () => activar(i));
+      enlace.addEventListener('focus', () => activar(i));
+    });
+
+    // La rotación se pausa mientras alguien interactúa con la sección y cuando no está a la vista.
+    seccion.addEventListener('mouseenter', detener);
+    seccion.addEventListener('mouseleave', iniciar);
+    seccion.addEventListener('focusin', detener);
+    seccion.addEventListener('focusout', (evento) => {
+      if (!seccion.contains(evento.relatedTarget as Node | null)) iniciar();
+    });
+
+    // En pantallas táctiles no hay mouse que la pause: al tocar la sección la rotación se detiene y
+    // no vuelve (WCAG 2.2.2).
+    seccion.addEventListener('pointerdown', (evento) => {
+      if (evento.pointerType === 'mouse') return;
+      detenidaPorTacto = true;
+      detener();
+    });
+
+    new IntersectionObserver(([entrada]) => {
+      if (entrada?.isIntersecting) iniciar();
+      else detener();
+    }).observe(seccion);
+  }
+</script>
+
+<style>
+  .cuerpo {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-areas:
+      'lista visor'
+      'metodo visor';
+    grid-template-rows: auto 1fr;
+    gap: 3rem 5rem;
+    margin-block-start: 3.5rem;
+  }
+
+  .lista {
+    grid-area: lista;
+    display: grid;
+    align-content: start;
+    gap: 0.2em;
+    padding: 0;
+    list-style: none;
+    font-size: calc(var(--fs-titulo-seccion) * 0.6);
+    line-height: 1.1;
+    letter-spacing: var(--ls-bajada);
+  }
+
+  .servicio {
+    color: var(--color-tenue);
+    transition: color 0.3s;
+  }
+
+  .servicio:is(:hover, :focus-visible),
+  .servicio[data-activo] {
+    color: var(--color-texto);
+  }
+
+  .final {
+    white-space: nowrap;
+  }
+
+  /* Indica que cada servicio lleva a su detalle. Es un SVG porque Jost no trae la flecha y otra fuente
+     la dibujaría con otro grosor; el trazo, en em, iguala el del texto. */
+  .flecha {
+    display: inline;
+    width: 0.62em;
+    margin-inline-start: 0.3em;
+    vertical-align: 0.04em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+  }
+
+  /* Con mouse aparece en el servicio activo, deslizándose hacia el texto. En pantallas táctiles no
+     hay hover que la revele, así que queda siempre visible en gris. */
+  @media (hover: hover) {
+    .flecha {
+      opacity: 0;
+      translate: -0.25em 0;
+      transition:
+        opacity 0.3s,
+        translate 0.3s;
+    }
+
+    .servicio:is(:hover, :focus-visible, [data-activo]) .flecha {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @media (hover: none) {
+    .flecha {
+      color: var(--color-tenue);
+    }
+  }
+
+  .visor {
+    grid-area: visor;
+    display: grid;
+    align-self: start;
+  }
+
+  /* Todas las figuras ocupan la misma celda; solo la activa es visible (fundido cruzado de 0.3 s,
+     como en la referencia). */
+  .figura {
+    grid-area: 1 / 1;
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.3s ease,
+      visibility 0s linear 0.3s;
+  }
+
+  .figura.activa {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease;
+  }
+
+  .foto {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  .pie {
+    color: var(--color-secundario);
+  }
+
+  .metodo {
+    grid-area: metodo;
+    align-self: end;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 1rem var(--margen);
+    padding-block-start: 1.5rem;
+    border-block-start: 1px solid color-mix(in srgb, var(--color-texto) 20%, transparent);
+  }
+
+  .metodo-texto {
+    font-size: var(--fs-texto-l);
+    line-height: 1.35;
+  }
+
+  @media (max-width: 809px) {
+    .cuerpo {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'lista'
+        'visor'
+        'metodo';
+      grid-template-rows: auto;
+      gap: 2.5rem;
+    }
+
+    .metodo {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

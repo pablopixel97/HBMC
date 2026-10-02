@@ -1,0 +1,97 @@
+/*
+ * Tokens de diseño. Escala y medidas tomadas de Archimagi (docs/referencia-archimagi.md),
+ * colores de la marca HBMC (CLAUDE.md).
+ *
+ * Breakpoints (las media queries no aceptan variables; usar estos valores):
+ *   escritorio ≥ 1200px · tablet 810–1199px · móvil < 810px
+ */
+
+:root {
+  /* Marca */
+  --color-grafito: #22282d;
+  --color-crema: #f3f0e8;
+  --color-blanco: #ffffff;
+  /* [DECISIÓN] Acento del botón y la banda del CTA: crema (identidad bicromática)
+     o el amarillo #f2e500 de las exploraciones de marca. */
+  --color-acento: var(--color-crema);
+
+  /* Footer recreado de composites.archi, con su negro y su gris tal cual (pedido explícito; fuera de
+     la paleta bicromática). */
+  --color-footer-fondo: #0f0f0f;
+  --color-footer-texto: #aeaaaa;
+
+  /* Grises cálidos. "tenue" es solo para texto grande (≥ 24px, contraste ≥ 3:1);
+     "secundario" sirve para texto chico (contraste ≥ 4.5:1). */
+  --color-gris-tenue: #8c8a85;
+  --color-gris-secundario: #6e6c67;
+  --color-gris-sobre-oscuro: #9a9892;
+
+  /* Tipografía. Jost es la propuesta libre equivalente a Futura; pendiente de confirmar. */
+  --font-titulos: 'Jost Variable', 'Futura', 'Century Gothic', sans-serif;
+  --font-texto: 'Jost Variable', 'Century Gothic', sans-serif;
+
+  --fw-titulo: 500;
+  --fw-texto: 400;
+  --fw-etiqueta: 600;
+
+  /* Archimagi usa −0.08em / −0.04em / −0.02em con Geist. Jost es más ancha y redonda,
+     así que se parte de la mitad; calibrar visualmente. */
+  --ls-titulo: -0.04em;
+  --ls-bajada: -0.02em;
+  --ls-texto: -0.01em;
+
+  /* Escala: escritorio */
+  --fs-titulo-seccion: 4.5rem; /* 72px */
+  --fs-bajada: 2rem; /* 32px */
+  --fs-texto-xl: 1.75rem; /* 28px */
+  --fs-texto-l: 1.5rem; /* 24px */
+  --fs-texto: 1.125rem; /* 18px */
+  --fs-pie: 1.25rem; /* 20px */
+  --fs-etiqueta: 0.875rem; /* 14px */
+
+  /* Espacios */
+  --margen: 2.5rem; /* 40px */
+  --nav-margen: 1.625rem; /* 26px */
+  --espacio-seccion: 7.5rem; /* provisional */
+  --radio: 0.375rem;
+
+  /* Movimiento. Los resortes de Archimagi (Framer), muestreados como curvas linear(). */
+  /* Resorte { duration: 0.4, bounce: 0.2 }: hovers y menú. Se pasa un 1,5 % y vuelve. */
+  --curva-resorte: linear(
+    0, 0.058, 0.188, 0.345, 0.499, 0.636, 0.749, 0.837, 0.903, 0.949, 0.979, 0.998, 1.009,
+    1.014, 1.015, 1.014, 1.012, 1.01, 1.007, 1.005, 1.004, 1.002, 1.001, 1.001, 1
+  );
+  /* Resorte sobreamortiguado { stiffness: 200, damping: 60 }: arranca rápido y se asienta lento,
+     sin rebote. Entrada del nav (1.6 s) y fotos flotantes. */
+  --curva-amortiguada: linear(
+    0, 0.111, 0.252, 0.373, 0.475, 0.56, 0.631, 0.691, 0.741, 0.783, 0.819, 0.848, 0.873, 0.893,
+    0.911, 0.925, 0.937, 0.947, 0.956, 0.963, 0.969, 0.974, 0.978, 0.982, 0.985, 0.987, 0.989,
+    0.991, 0.993, 0.994, 0.995, 0.996, 1
+  );
+}
+
+@media (max-width: 1199px) {
+  :root {
+    --fs-titulo-seccion: 4rem; /* 64px */
+    --fs-bajada: 1.75rem; /* 28px */
+    --fs-texto-xl: 1.625rem; /* 26px */
+    --fs-texto-l: 1.25rem; /* 20px */
+    --fs-texto: 1rem; /* 16px */
+    --fs-pie: 1.125rem; /* 18px */
+
+    --margen: 1.25rem; /* 20px */
+    --nav-margen: 1rem;
+    --espacio-seccion: 5rem;
+  }
+}
+
+@media (max-width: 809px) {
+  :root {
+    --fs-titulo-seccion: 3rem; /* 48px */
+    --fs-bajada: 1.625rem; /* 26px */
+    --fs-texto-xl: 1.5rem; /* 24px */
+    --fs-pie: 1rem; /* 16px */
+
+    --espacio-seccion: 3.75rem;
+  }
+}
